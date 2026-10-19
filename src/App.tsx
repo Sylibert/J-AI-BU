@@ -5,7 +5,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy, Calendar as CalendarIcon } from 'lucide-react';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { useHydrationReminder } from './hooks/useHydrationReminder';
@@ -14,6 +14,7 @@ import { useTheme } from './hooks/useTheme';
 import { ThemeToggle } from './components/ThemeToggle';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { UserAuthModal } from './components/UserAuthModal';
+import { TrophiesView } from './components/TrophiesView';
 
 const STORAGE_KEY = 'gbu_validated_dates';
 
@@ -83,13 +84,17 @@ export default function App() {
   const [validatedDates, setValidatedDates] = useState<string[]>(() => loadValidatedDates());
   const location = useLocation();
   const navigate = useNavigate();
-  const currentView: 'tracker' | 'calendar' = location.pathname.startsWith('/calendar')
+  const currentView: 'trophies' | 'tracker' | 'calendar' = location.pathname.startsWith('/trophies')
+    ? 'trophies'
+    : location.pathname.startsWith('/calendar')
     ? 'calendar'
     : 'tracker';
 
   const setCurrentView = useCallback(
-    (view: 'tracker' | 'calendar') => {
-      if (view === 'calendar') {
+    (view: 'trophies' | 'tracker' | 'calendar') => {
+      if (view === 'trophies') {
+        navigate('/trophies');
+      } else if (view === 'calendar') {
         navigate('/calendar');
       } else {
         navigate('/');
@@ -255,8 +260,8 @@ export default function App() {
       }
     }
 
-    // Résistance élastique aux bords extrêmes
-    if (currentView === 'tracker' && deltaX > 0) {
+    // Résistance élastique aux bords extrêmes (Trophées à gauche, Calendrier à droite)
+    if (currentView === 'trophies' && deltaX > 0) {
       setDragOffsetPx(deltaX * 0.25);
     } else if (currentView === 'calendar' && deltaX < 0) {
       setDragOffsetPx(deltaX * 0.25);
@@ -268,18 +273,37 @@ export default function App() {
   const handleSwipeEnd = () => {
     if (isDraggingRef.current) {
       const width = containerRef.current?.clientWidth || 360;
-      const threshold = Math.min(75, width * 0.2);
+      const threshold = Math.min(65, width * 0.18);
 
-      // Slide vers la gauche depuis l'accueil -> Calendrier
-      if (currentView === 'tracker' && dragOffsetPx < -threshold) {
-        triggerHaptic(10);
-        setDisplayedDate(new Date());
-        setCurrentView('calendar');
+      // Depuis les Trophées (panneau de gauche)
+      if (currentView === 'trophies') {
+        // Glisser vers la gauche -> Accueil
+        if (dragOffsetPx < -threshold) {
+          triggerHaptic(10);
+          setCurrentView('tracker');
+        }
       }
-      // Slide vers la droite depuis le calendrier -> Accueil
-      else if (currentView === 'calendar' && dragOffsetPx > threshold) {
-        triggerHaptic(10);
-        setCurrentView('tracker');
+      // Depuis l'Accueil (panneau central)
+      else if (currentView === 'tracker') {
+        // Glisser vers la droite -> Trophées
+        if (dragOffsetPx > threshold) {
+          triggerHaptic(10);
+          setCurrentView('trophies');
+        }
+        // Glisser vers la gauche -> Calendrier
+        else if (dragOffsetPx < -threshold) {
+          triggerHaptic(10);
+          setDisplayedDate(new Date());
+          setCurrentView('calendar');
+        }
+      }
+      // Depuis le Calendrier (panneau de droite)
+      else if (currentView === 'calendar') {
+        // Glisser vers la droite -> Accueil
+        if (dragOffsetPx > threshold) {
+          triggerHaptic(10);
+          setCurrentView('tracker');
+        }
       }
     }
 
@@ -290,7 +314,8 @@ export default function App() {
     setDragOffsetPx(0);
   };
 
-  const baseTranslatePercent = currentView === 'tracker' ? 0 : -50;
+  const baseTranslatePercent =
+    currentView === 'trophies' ? 0 : currentView === 'tracker' ? -33.333333 : -66.666667;
 
   return (
     <div
@@ -322,23 +347,58 @@ export default function App() {
       className="app-safe-container flex flex-col w-full h-full max-w-[480px] mx-auto select-none overflow-hidden touch-pan-y"
     >
       {/* En-tête discret */}
-      <header className="grid grid-cols-[auto_1fr_auto] items-center h-[48px] px-[24px] shrink-0 gap-3">
-        <div className="justify-self-start">
+      <header className="grid grid-cols-[auto_1fr_auto] items-center h-[48px] px-[20px] shrink-0 gap-2">
+        <div className="flex items-center gap-1.5 justify-self-start">
           <PWAInstallButton />
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic(10);
+              setCurrentView(currentView === 'trophies' ? 'tracker' : 'trophies');
+            }}
+            aria-label={currentView === 'trophies' ? "Retour à l'accueil" : "Voir les trophées"}
+            className={`spring-icon-btn w-[36px] h-[36px] rounded-full flex items-center justify-center cursor-pointer transition-colors ${
+              currentView === 'trophies'
+                ? 'bg-[#FFD60A] text-[#111111] shadow-[0_2px_8px_rgba(255,214,10,0.35)]'
+                : 'bg-[var(--card-subtle)] text-[var(--text-main)] hover:bg-[var(--btn-hover)]'
+            }`}
+          >
+            <Trophy className="w-[17px] h-[17px] stroke-[2.2]" />
+          </button>
         </div>
 
         <h1 className="text-center text-[12px] font-bold tracking-[1.6px] uppercase text-[var(--text-main)] opacity-75 whitespace-nowrap">
-          {currentView === 'tracker' ? "AUJOURD'HUI" : 'HISTORIQUE'}
+          {currentView === 'trophies'
+            ? 'TROPHÉES'
+            : currentView === 'tracker'
+            ? "AUJOURD'HUI"
+            : 'HISTORIQUE'}
         </h1>
 
-        <div className="flex items-center gap-2 justify-self-end">
+        <div className="flex items-center gap-1.5 justify-self-end">
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic(10);
+              setDisplayedDate(new Date());
+              setCurrentView(currentView === 'calendar' ? 'tracker' : 'calendar');
+            }}
+            aria-label={currentView === 'calendar' ? "Retour à l'accueil" : "Voir le calendrier"}
+            className={`spring-icon-btn w-[36px] h-[36px] rounded-full flex items-center justify-center cursor-pointer transition-colors ${
+              currentView === 'calendar'
+                ? 'bg-[#FFD60A] text-[#111111] shadow-[0_2px_8px_rgba(255,214,10,0.35)]'
+                : 'bg-[var(--card-subtle)] text-[var(--text-main)] hover:bg-[var(--btn-hover)]'
+            }`}
+          >
+            <CalendarIcon className="w-[17px] h-[17px] stroke-[2.2]" />
+          </button>
           <ThemeToggle themeState={themeState} />
           <NotificationReminderModal reminder={reminder} />
           <UserAuthModal authHook={authHook} datesCount={validatedDates.length} />
         </div>
       </header>
 
-      {/* Piste horizontale de slide (2 écrans : 0 = Tracker, 1 = Calendrier) */}
+      {/* Piste horizontale de slide (3 écrans : 0 = Trophées, 1 = Tracker, 2 = Calendrier) */}
       <main className="relative flex-1 w-full overflow-hidden">
         <div
           style={{
@@ -347,12 +407,28 @@ export default function App() {
               ? 'none'
               : 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)',
           }}
-          className="flex w-[200%] h-full will-change-transform"
+          className="flex w-[300%] h-full will-change-transform"
         >
+          {/* VUE 0 : TROPHÉES & PALIERS GAMIFIÉS */}
+          <section
+            aria-hidden={currentView !== 'trophies'}
+            className="w-1/3 h-full flex flex-col items-center relative overflow-hidden"
+          >
+            <TrophiesView
+              validatedDates={validatedDates}
+              onTriggerHaptic={triggerHaptic}
+              onNavigateHome={() => setCurrentView('tracker')}
+              onNavigateCalendar={() => {
+                setDisplayedDate(new Date());
+                setCurrentView('calendar');
+              }}
+            />
+          </section>
+
           {/* VUE 1 : TRACKER PRINCIPAL */}
           <section
             aria-hidden={currentView !== 'tracker'}
-            className="w-1/2 h-full px-[24px] flex flex-col items-center justify-center relative"
+            className="w-1/3 h-full px-[24px] flex flex-col items-center justify-center relative"
           >
             <div className="relative flex items-center justify-center">
               {/* Ondes de choc radiales au clic */}
@@ -461,7 +537,7 @@ export default function App() {
           {/* VUE 2 : CALENDRIER & STATISTIQUES */}
           <section
             aria-hidden={currentView !== 'calendar'}
-            className="w-1/2 h-full px-[24px] flex flex-col items-center justify-start pt-[16px]"
+            className="w-1/3 h-full px-[24px] flex flex-col items-center justify-start pt-[16px]"
           >
             {/* Double compteur haut */}
             <div className="flex flex-row justify-center items-center gap-[48px] w-full mb-[24px] py-[18px] px-[24px] bg-[var(--card-bg)] rounded-[24px] shadow-[var(--shadow-card)] border border-[var(--border-subtle)] transition-colors duration-200">
@@ -568,6 +644,21 @@ export default function App() {
       {/* Indicateur discret de pagination / slide en bas */}
       <footer className="flex flex-col items-center justify-center gap-1.5 pt-2 pb-1 shrink-0">
         <div className="flex items-center gap-2">
+          {/* Trophées dot */}
+          <button
+            type="button"
+            aria-label="Écran Trophées"
+            onClick={() => {
+              triggerHaptic(10);
+              setCurrentView('trophies');
+            }}
+            className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+              currentView === 'trophies'
+                ? 'w-5 bg-[#FFD60A]'
+                : 'w-1.5 bg-[var(--text-main)] opacity-20 hover:opacity-60'
+            }`}
+          />
+          {/* Aujourd'hui dot */}
           <button
             type="button"
             aria-label="Écran Aujourd'hui"
@@ -578,9 +669,10 @@ export default function App() {
             className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
               currentView === 'tracker'
                 ? 'w-5 bg-[var(--text-main)]'
-                : 'w-1.5 bg-[var(--text-main)] opacity-20'
+                : 'w-1.5 bg-[var(--text-main)] opacity-20 hover:opacity-60'
             }`}
           />
+          {/* Calendrier dot */}
           <button
             type="button"
             aria-label="Écran Calendrier"
@@ -592,13 +684,15 @@ export default function App() {
             className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
               currentView === 'calendar'
                 ? 'w-5 bg-[var(--text-main)]'
-                : 'w-1.5 bg-[var(--text-main)] opacity-20'
+                : 'w-1.5 bg-[var(--text-main)] opacity-20 hover:opacity-60'
             }`}
           />
         </div>
         <span className="text-[10px] font-semibold text-[var(--text-muted)] tracking-wide">
-          {currentView === 'tracker'
-            ? 'Glissez vers la gauche pour le calendrier'
+          {currentView === 'trophies'
+            ? "Glissez vers la gauche pour aujourd'hui"
+            : currentView === 'tracker'
+            ? '← Trophées (droite) • Calendrier (gauche) →'
             : "Glissez vers la droite pour aujourd'hui"}
         </span>
       </footer>
