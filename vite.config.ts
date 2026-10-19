@@ -6,6 +6,7 @@ import {VitePWA} from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
+    base: '/J-AI-BU/',
     plugins: [
       react(),
       tailwindcss(),
@@ -13,7 +14,7 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg', 'apple-touch-icon.png', 'sw-notifications.js'],
         manifest: {
-          id: '/',
+          id: '/J-AI-BU/',
           name: 'GBU — Suivi Quotidien',
           short_name: 'GBU',
           description: "Application minimaliste de suivi d'hydratation et de boisson quotidienne.",
@@ -21,24 +22,24 @@ export default defineConfig(() => {
           background_color: '#FAF6F2',
           display: 'standalone',
           orientation: 'portrait',
-          start_url: '/',
-          scope: '/',
+          start_url: '/J-AI-BU/',
+          scope: '/J-AI-BU/',
           lang: 'fr',
           icons: [
             {
-              src: '/pwa-192x192.png',
+              src: 'pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.png',
+              src: 'pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-maskable-512x512.png',
+              src: 'pwa-maskable-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',

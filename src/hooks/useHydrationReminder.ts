@@ -74,15 +74,19 @@ export function useHydrationReminder({ isTodayValidated, todayKey }: UseHydratio
         if (alreadySent) return;
       }
 
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+      const iconUrl = `${cleanBase}pwa-192x192.png`;
+
       const success = await sendNotificationViaSW('GBU — Rappel d’hydratation 💧', {
         body: 'Il est 20h passées ! N’oubliez pas de boire et d’enregistrer votre hydratation.',
-        icon: '/pwa-192x192.png',
-        badge: '/pwa-192x192.png',
+        icon: iconUrl,
+        badge: iconUrl,
         tag: 'gbu-hydration-reminder',
         renotify: true,
         vibrate: [200, 100, 200],
         data: {
-          url: '/',
+          url: cleanBase,
           dateKey: todayKey,
         },
       } as NotificationOptions);
@@ -107,10 +111,14 @@ export function useHydrationReminder({ isTodayValidated, todayKey }: UseHydratio
       return false;
     }
 
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    const iconUrl = `${cleanBase}pwa-192x192.png`;
+
     const success = await sendNotificationViaSW('GBU — Test de notification 💧', {
       body: 'Le rappel automatique à 20h est bien configuré avec le Service Worker !',
-      icon: '/pwa-192x192.png',
-      badge: '/pwa-192x192.png',
+      icon: iconUrl,
+      badge: iconUrl,
       tag: 'gbu-test-notification',
       vibrate: [100, 50, 100],
     } as NotificationOptions);

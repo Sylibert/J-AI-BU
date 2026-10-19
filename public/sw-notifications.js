@@ -9,7 +9,8 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow('/');
+        const targetUrl = (event.notification && event.notification.data && event.notification.data.url) || '/';
+        return clients.openWindow(targetUrl);
       }
     })
   );
