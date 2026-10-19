@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="116" fill="#FFD60A"/>
+  <circle cx="256" cy="256" r="184" fill="#FFD60A" stroke="#111111" stroke-width="14"/>
+  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif" font-weight="800" font-size="136" letter-spacing="-4" fill="#111111">GBU</text>
+</svg>

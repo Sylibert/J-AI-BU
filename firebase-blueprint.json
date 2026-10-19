@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents an authenticated user and their personal hydration tracking history.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique Firebase Authentication UID of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's Google email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's public display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "User's avatar profile URL."
+        },
+        "validatedDates": {
+          "type": "array",
+          "description": "List of validated hydration date keys in YYYY-MM-DD format."
+        },
+        "reminderEnabled": {
+          "type": "boolean",
+          "description": "Whether the 20h evening reminder is enabled."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user account profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user account profile was last updated."
+        }
+      },
+      "required": ["id", "validatedDates"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User document containing account info and hydration tracking dates. Restricted strictly to the authenticated user."
+    }
+  }
+}

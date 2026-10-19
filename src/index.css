@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+:root {
+  --bg-color: #FAF6F2;
+  --card-bg: #FFFFFF;
+  --card-subtle: #FAF6F2;
+  --text-main: #111111;
+  --text-muted: #8E8E93;
+  --accent-yellow: #FFD60A;
+  --accent-brown: #2D1810;
+  --accent-brown-deep: #1F100A;
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --btn-bg: #FFFFFF;
+  --btn-hover: #F2ECE6;
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.025);
+  --shadow-calendar: 0 8px 30px rgba(0, 0, 0, 0.03);
+  --shadow-btn: 0 2px 8px rgba(0, 0, 0, 0.03);
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-button: 'Archivo Black', 'Arial Black', 'Arial Bold', Impact, sans-serif;
+}
+
+html.dark {
+  --bg-color: #121316;
+  --card-bg: #1B1D22;
+  --card-subtle: #242730;
+  --text-main: #F4F5F7;
+  --text-muted: #9BA1A8;
+  --accent-yellow: #FFD60A;
+  --accent-brown: #2D1810;
+  --accent-brown-deep: #1F100A;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --btn-bg: #1B1D22;
+  --btn-hover: #262932;
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-calendar: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-btn: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  font-family: var(--font-main);
+  color: var(--text-main);
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.app-safe-container {
+  padding-top: calc(env(safe-area-inset-top, 20px) + 12px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 12px);
+}
+
+.font-arial-black {
+  font-family: var(--font-button);
+  font-weight: 900;
+  transition: color 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Animation tactile moderne du bouton principal */
+@keyframes satisfying-pop {
+  0% {
+    transform: scale(1);
+  }
+  22% {
+    transform: scale(0.84);
+  }
+  56% {
+    transform: scale(1.07);
+  }
+  78% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shockwave-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes shockwave-ring-secondary {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.24);
+    opacity: 0;
+  }
+}
+
+@keyframes content-reveal {
+  0% {
+    transform: scale(0.93);
+  }
+  55% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.main-btn-modern {
+  transition:
+    background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.main-btn-modern:active {
+  transform: scale(0.92);
+}
+
+.main-btn-modern.animating-pop {
+  animation: satisfying-pop 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ripple-wave-1 {
+  animation: shockwave-ring 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ripple-wave-2 {
+  animation: shockwave-ring-secondary 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.06s forwards;
+}
+
+.btn-content-swap {
+  animation: content-reveal 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.spring-icon-btn {
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s ease;
+}
+
+.spring-icon-btn:active {
+  transform: scale(0.90);
+}
+
+.spring-day-cell {
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.15s ease;
+}
+
+.spring-day-cell:active {
+  transform: scale(0.84);
+}
