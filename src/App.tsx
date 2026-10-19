@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
@@ -80,7 +81,22 @@ const USE_CUSTOM_BUTTON_IMAGES = false;
 
 export default function App() {
   const [validatedDates, setValidatedDates] = useState<string[]>(() => loadValidatedDates());
-  const [currentView, setCurrentView] = useState<'tracker' | 'calendar'>('tracker');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentView: 'tracker' | 'calendar' = location.pathname.startsWith('/calendar')
+    ? 'calendar'
+    : 'tracker';
+
+  const setCurrentView = useCallback(
+    (view: 'tracker' | 'calendar') => {
+      if (view === 'calendar') {
+        navigate('/calendar');
+      } else {
+        navigate('/');
+      }
+    },
+    [navigate]
+  );
   const [displayedDate, setDisplayedDate] = useState<Date>(() => new Date());
   const [todayKey, setTodayKey] = useState<string>(() => getTodayKey());
   const [animTrigger, setAnimTrigger] = useState<number>(0);
