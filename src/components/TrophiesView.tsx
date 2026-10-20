@@ -7,11 +7,10 @@ import {
   Lock, 
   CheckCircle2, 
   Sparkles, 
-  Flame, 
   ChevronLeft, 
   ChevronRight,
-  TrendingUp,
-  Target
+  ChevronUp,
+  Users
 } from 'lucide-react';
 
 export interface TrophyTier {
@@ -93,12 +92,18 @@ interface TrophiesViewProps {
   onTriggerHaptic?: (pattern?: number | number[]) => void;
   onNavigateHome?: () => void;
   onNavigateCalendar?: () => void;
+  onSwipeUpToFriends?: () => void;
+  groupMemberCount?: number;
+  groupId?: string;
 }
 
 export function TrophiesView({
   validatedDates,
   onTriggerHaptic,
   onNavigateHome,
+  onSwipeUpToFriends,
+  groupMemberCount = 0,
+  groupId = '',
 }: TrophiesViewProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
 
@@ -422,8 +427,38 @@ export function TrophiesView({
         })}
       </div>
 
-      {/* Astuce de retour */}
-      <div className="mt-3 text-center">
+      {/* Invitation au Swipe vers le haut : Vue Potes / Cercle */}
+      <div className="w-full max-w-[420px] mt-3.5 flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            onTriggerHaptic?.(10);
+            onSwipeUpToFriends?.();
+          }}
+          className="w-full py-2.5 px-4 rounded-[18px] bg-[var(--card-bg)] border border-[var(--border-subtle)] shadow-[var(--shadow-card)] flex items-center justify-between gap-2 cursor-pointer active:scale-[0.98] transition-transform"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-full bg-[#FFD60A]/20 text-[var(--text-main)] flex items-center justify-center">
+              <Users className="w-3.5 h-3.5 stroke-[2.4]" />
+            </span>
+            <div className="text-left">
+              <span className="block text-[12px] font-extrabold text-[var(--text-main)]">
+                Vue Potes / Cercle {groupId ? `(#${groupId})` : ''}
+              </span>
+              <span className="block text-[10px] font-semibold text-[var(--text-muted)]">
+                Glissez vers le haut pour voir la progression des amis
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-[11px] font-bold text-[var(--text-muted)] shrink-0">
+            {groupMemberCount > 0 && (
+              <span className="tabular-nums">{groupMemberCount}</span>
+            )}
+            <ChevronUp className="w-4 h-4 stroke-[2.5]" />
+          </div>
+        </button>
+
         <button
           type="button"
           onClick={onNavigateHome}

@@ -12,9 +12,10 @@ import { useHydrationReminder } from './hooks/useHydrationReminder';
 import { NotificationReminderModal } from './components/NotificationReminderModal';
 import { useTheme } from './hooks/useTheme';
 import { ThemeToggle } from './components/ThemeToggle';
-import { useFirebaseAuth } from './hooks/useFirebaseAuth';
-import { UserAuthModal } from './components/UserAuthModal';
 import { TrophiesView } from './components/TrophiesView';
+import { FriendsCircleView } from './components/FriendsCircleView';
+import { useSupabaseGroup } from './hooks/useSupabaseGroup';
+import { SupabaseProfileModal } from './components/SupabaseProfileModal';
 
 const STORAGE_KEY = 'gbu_validated_dates';
 
@@ -84,11 +85,16 @@ export default function App() {
   const [validatedDates, setValidatedDates] = useState<string[]>(() => loadValidatedDates());
   const location = useLocation();
   const navigate = useNavigate();
-  const currentView: 'trophies' | 'tracker' | 'calendar' = location.pathname.startsWith('/trophies')
-    ? 'trophies'
-    : location.pathname.startsWith('/calendar')
-    ? 'calendar'
-    : 'tracker';
+  const isCircleRoute =
+    location.pathname.startsWith('/cercle') || location.pathname.startsWith('/potes');
+  const currentView: 'trophies' | 'tracker' | 'calendar' =
+    location.pathname.startsWith('/trophies') || isCircleRoute
+      ? 'trophies'
+      : location.pathname.startsWith('/calendar')
+      ? 'calendar'
+      : 'tracker';
+
+  const trophiesSubView: 'trophies' | 'friends' = isCircleRoute ? 'friends' : 'trophies';
 
   const setCurrentView = useCallback(
     (view: 'trophies' | 'tracker' | 'calendar') => {
@@ -102,6 +108,18 @@ export default function App() {
     },
     [navigate]
   );
+
+  const setTrophiesSubView = useCallback(
+    (subView: 'trophies' | 'friends') => {
+      if (subView === 'friends') {
+        navigate('/cercle');
+      } else {
+        navigate('/trophies');
+      }
+    },
+    [navigate]
+  );
+
   const [displayedDate, setDisplayedDate] = useState<Date>(() => new Date());
   const [todayKey, setTodayKey] = useState<string>(() => getTodayKey());
   const [animTrigger, setAnimTrigger] = useState<number>(0);
@@ -112,15 +130,16 @@ export default function App() {
     validated: false,
   });
 
-  // Authentification Firebase & Synchronisation Cloud multi-appareils
-  const authHook = useFirebaseAuth(validatedDates, setValidatedDates);
+  // Synchronisation Supabase & Gestion du Cercle de Potes
+  const supabaseGroup = useSupabaseGroup(validatedDates, setValidatedDates, todayKey);
 
-  // États pour le slide horizontal (Swipe gauche / droite)
+  // États pour le slide horizontal (Swipe gauche / droite) et vertical (Trophées ↕ Potes)
   const containerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
-  const isDraggingRef = useRef<boolean>(false);
+  const dragAxisRef = useRef<'none' | 'horizontal' | 'vertical'>('none');
   const [dragOffsetPx, setDragOffsetPx] = useState<number>(0);
+  const [verticalDragOffsetPx, setVerticalDragOffsetPx] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
   // Synchronisation automatique lorsque l'application revient au premier plan un nouveau jour
@@ -129,6 +148,7 @@ export default function App() {
       if (document.visibilityState === 'visible') {
         setTodayKey(getTodayKey());
         setValidatedDates(loadValidatedDates());
+        void supabaseGroup.refreshGroupData();
       }
     };
 
@@ -142,20 +162,21 @@ export default function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.clearInterval(midnightInterval);
     };
-  }, []);
+  }, [supabaseGroup]);
 
   const toggleDateValidation = useCallback(
     (dateKey: string) => {
       setValidatedDates((prev) => {
         const exists = prev.includes(dateKey);
+        const isNowValidated = !exists;
         const next = exists ? prev.filter((d) => d !== dateKey) : [...prev, dateKey];
         const uniqueSorted = Array.from(new Set(next)).sort();
         saveValidatedDates(uniqueSorted);
-        authHook.syncDateChangeToCloud(uniqueSorted);
+        void supabaseGroup.syncDateToggle(dateKey, isNowValidated);
         return uniqueSorted;
       });
     },
-    [authHook]
+    [supabaseGroup]
   );
 
   const isTodayValidated = useMemo(
@@ -237,11 +258,11 @@ export default function App() {
     toggleDateValidation(dateKey);
   };
 
-  // --- GESTION DU SWIPE / SLIDE HORIZONTAL ---
+  // --- GESTION DU SWIPE HORIZONTAL & VERTICAL (SUR LA PAGE TROPHÉES) ---
   const handleSwipeStart = (clientX: number, clientY: number) => {
     touchStartX.current = clientX;
     touchStartY.current = clientY;
-    isDraggingRef.current = false;
+    dragAxisRef.current = 'none';
   };
 
   const handleSwipeMove = (clientX: number, clientY: number) => {
@@ -250,28 +271,45 @@ export default function App() {
     const deltaX = clientX - touchStartX.current;
     const deltaY = clientY - touchStartY.current;
 
-    if (!isDraggingRef.current) {
-      // Démarrer le drag uniquement si le geste est majoritairement horizontal
+    if (dragAxisRef.current === 'none') {
       if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
-        isDraggingRef.current = true;
+        dragAxisRef.current = 'horizontal';
+        setIsDragging(true);
+      } else if (
+        currentView === 'trophies' &&
+        Math.abs(deltaY) > 12 &&
+        Math.abs(deltaY) > Math.abs(deltaX)
+      ) {
+        dragAxisRef.current = 'vertical';
         setIsDragging(true);
       } else {
         return;
       }
     }
 
-    // Résistance élastique aux bords extrêmes (Trophées à gauche, Calendrier à droite)
-    if (currentView === 'trophies' && deltaX > 0) {
-      setDragOffsetPx(deltaX * 0.25);
-    } else if (currentView === 'calendar' && deltaX < 0) {
-      setDragOffsetPx(deltaX * 0.25);
-    } else {
-      setDragOffsetPx(deltaX);
+    if (dragAxisRef.current === 'horizontal') {
+      // Résistance élastique aux bords extrêmes (Trophées à gauche, Calendrier à droite)
+      if (currentView === 'trophies' && deltaX > 0) {
+        setDragOffsetPx(deltaX * 0.25);
+      } else if (currentView === 'calendar' && deltaX < 0) {
+        setDragOffsetPx(deltaX * 0.25);
+      } else {
+        setDragOffsetPx(deltaX);
+      }
+    } else if (dragAxisRef.current === 'vertical' && currentView === 'trophies') {
+      // Sur Trophées (en haut) : swipe vers le haut (deltaY < 0) ouvre Potes / Cercle
+      if (trophiesSubView === 'trophies' && deltaY > 0) {
+        setVerticalDragOffsetPx(deltaY * 0.2);
+      } else if (trophiesSubView === 'friends' && deltaY < 0) {
+        setVerticalDragOffsetPx(deltaY * 0.2);
+      } else {
+        setVerticalDragOffsetPx(deltaY);
+      }
     }
   };
 
   const handleSwipeEnd = () => {
-    if (isDraggingRef.current) {
+    if (dragAxisRef.current === 'horizontal') {
       const width = containerRef.current?.clientWidth || 360;
       const threshold = Math.min(65, width * 0.18);
 
@@ -305,17 +343,32 @@ export default function App() {
           setCurrentView('tracker');
         }
       }
+    } else if (dragAxisRef.current === 'vertical' && currentView === 'trophies') {
+      const verticalThreshold = 55;
+      // Swipe vers le haut depuis Trophées -> ouvre Potes / Cercle
+      if (trophiesSubView === 'trophies' && verticalDragOffsetPx < -verticalThreshold) {
+        triggerHaptic([10, 20]);
+        void supabaseGroup.refreshGroupData();
+        setTrophiesSubView('friends');
+      }
+      // Swipe vers le bas depuis Potes / Cercle -> retour aux Trophées
+      else if (trophiesSubView === 'friends' && verticalDragOffsetPx > verticalThreshold) {
+        triggerHaptic(10);
+        setTrophiesSubView('trophies');
+      }
     }
 
     touchStartX.current = null;
     touchStartY.current = null;
-    isDraggingRef.current = false;
+    dragAxisRef.current = 'none';
     setIsDragging(false);
     setDragOffsetPx(0);
+    setVerticalDragOffsetPx(0);
   };
 
   const baseTranslatePercent =
     currentView === 'trophies' ? 0 : currentView === 'tracker' ? -33.333333 : -66.666667;
+  const baseVerticalTranslatePercent = trophiesSubView === 'trophies' ? 0 : -50;
 
   return (
     <div
@@ -356,7 +409,7 @@ export default function App() {
               triggerHaptic(10);
               setCurrentView(currentView === 'trophies' ? 'tracker' : 'trophies');
             }}
-            aria-label={currentView === 'trophies' ? "Retour à l'accueil" : "Voir les trophées"}
+            aria-label={currentView === 'trophies' ? "Retour à l'accueil" : 'Voir les trophées'}
             className={`spring-icon-btn w-[36px] h-[36px] rounded-full flex items-center justify-center cursor-pointer transition-colors ${
               currentView === 'trophies'
                 ? 'bg-[#FFD60A] text-[#111111] shadow-[0_2px_8px_rgba(255,214,10,0.35)]'
@@ -369,7 +422,9 @@ export default function App() {
 
         <h1 className="text-center text-[12px] font-bold tracking-[1.6px] uppercase text-[var(--text-main)] opacity-75 whitespace-nowrap">
           {currentView === 'trophies'
-            ? 'TROPHÉES'
+            ? trophiesSubView === 'friends'
+              ? 'POTES / CERCLE'
+              : 'TROPHÉES'
             : currentView === 'tracker'
             ? "AUJOURD'HUI"
             : 'HISTORIQUE'}
@@ -383,7 +438,7 @@ export default function App() {
               setDisplayedDate(new Date());
               setCurrentView(currentView === 'calendar' ? 'tracker' : 'calendar');
             }}
-            aria-label={currentView === 'calendar' ? "Retour à l'accueil" : "Voir le calendrier"}
+            aria-label={currentView === 'calendar' ? "Retour à l'accueil" : 'Voir le calendrier'}
             className={`spring-icon-btn w-[36px] h-[36px] rounded-full flex items-center justify-center cursor-pointer transition-colors ${
               currentView === 'calendar'
                 ? 'bg-[#FFD60A] text-[#111111] shadow-[0_2px_8px_rgba(255,214,10,0.35)]'
@@ -394,11 +449,14 @@ export default function App() {
           </button>
           <ThemeToggle themeState={themeState} />
           <NotificationReminderModal reminder={reminder} />
-          <UserAuthModal authHook={authHook} datesCount={validatedDates.length} />
+          <SupabaseProfileModal
+            supabaseGroup={supabaseGroup}
+            onTriggerHaptic={triggerHaptic}
+          />
         </div>
       </header>
 
-      {/* Piste horizontale de slide (3 écrans : 0 = Trophées, 1 = Tracker, 2 = Calendrier) */}
+      {/* Piste horizontale de slide (3 écrans : 0 = Trophées ↕ Potes, 1 = Tracker, 2 = Calendrier) */}
       <main className="relative flex-1 w-full overflow-hidden">
         <div
           style={{
@@ -409,20 +467,48 @@ export default function App() {
           }}
           className="flex w-[300%] h-full will-change-transform"
         >
-          {/* VUE 0 : TROPHÉES & PALIERS GAMIFIÉS */}
+          {/* VUE 0 : TROPHÉES (HAUT) ↕ POTES / CERCLE (BAS PAR SWIPE VERS LE HAUT) */}
           <section
             aria-hidden={currentView !== 'trophies'}
-            className="w-1/3 h-full flex flex-col items-center relative overflow-hidden"
+            className="w-1/3 h-full relative overflow-hidden"
           >
-            <TrophiesView
-              validatedDates={validatedDates}
-              onTriggerHaptic={triggerHaptic}
-              onNavigateHome={() => setCurrentView('tracker')}
-              onNavigateCalendar={() => {
-                setDisplayedDate(new Date());
-                setCurrentView('calendar');
+            <div
+              style={{
+                transform: `translate3d(0, calc(${baseVerticalTranslatePercent}% + ${verticalDragOffsetPx}px), 0)`,
+                transition: isDragging
+                  ? 'none'
+                  : 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)',
               }}
-            />
+              className="flex flex-col w-full h-[200%] will-change-transform"
+            >
+              {/* Étage supérieur : Trophées */}
+              <div className="w-full h-1/2 overflow-hidden">
+                <TrophiesView
+                  validatedDates={validatedDates}
+                  onTriggerHaptic={triggerHaptic}
+                  onNavigateHome={() => setCurrentView('tracker')}
+                  onNavigateCalendar={() => {
+                    setDisplayedDate(new Date());
+                    setCurrentView('calendar');
+                  }}
+                  onSwipeUpToFriends={() => {
+                    void supabaseGroup.refreshGroupData();
+                    setTrophiesSubView('friends');
+                  }}
+                  groupMemberCount={supabaseGroup.members.length}
+                  groupId={supabaseGroup.groupId}
+                />
+              </div>
+
+              {/* Étage inférieur : Vue Potes / Cercle */}
+              <div className="w-full h-1/2 overflow-hidden">
+                <FriendsCircleView
+                  supabaseGroup={supabaseGroup}
+                  onTriggerHaptic={triggerHaptic}
+                  onSwipeDownToTrophies={() => setTrophiesSubView('trophies')}
+                />
+              </div>
+            </div>
           </section>
 
           {/* VUE 1 : TRACKER PRINCIPAL */}
@@ -690,7 +776,9 @@ export default function App() {
         </div>
         <span className="text-[10px] font-semibold text-[var(--text-muted)] tracking-wide">
           {currentView === 'trophies'
-            ? "Glissez vers la gauche pour aujourd'hui"
+            ? trophiesSubView === 'friends'
+              ? "↓ Bas pour Trophées • Gauche pour Aujourd'hui →"
+              : "↑ Haut pour Potes / Cercle • Gauche pour Aujourd'hui →"
             : currentView === 'tracker'
             ? '← Trophées (droite) • Calendrier (gauche) →'
             : "Glissez vers la droite pour aujourd'hui"}
