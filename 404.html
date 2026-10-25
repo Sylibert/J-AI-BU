@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>GBU — Redirection</title>
+    <script>
+      // Single Page Apps for GitHub Pages
+      // MIT License https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1; // for https://<username>.github.io/<repo-name>/
+      var l = window.location;
+      var repoBase = '/' + l.pathname.split('/').slice(1, 1 + pathSegmentsToKeep).join('/');
+      var rest = l.pathname.slice(repoBase.length);
+      var query = l.search ? l.search : '';
+      var hash = l.hash ? l.hash : '';
+      
+      // Redirect to base path with hash routing
+      var newPath = repoBase + '/#' + (rest.startsWith('/') ? rest : '/' + rest) + query;
+      window.location.replace(newPath);
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
