@@ -1,90 +1,110 @@
 import React, { useMemo, useState } from 'react';
-import { 
-  Trophy, 
-  Award, 
-  Gem, 
-  Medal, 
-  Lock, 
-  CheckCircle2, 
-  Sparkles, 
-  ChevronLeft, 
+import {
+  Trophy,
+  Award,
+  Gem,
+  Medal,
+  Lock,
+  CheckCircle2,
+  Sparkles,
+  ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Users
+  Users,
 } from 'lucide-react';
 
 export interface TrophyTier {
   id: 'bronze' | 'silver' | 'gold' | 'diamond';
   name: string;
+  rankTitle: string;
+  fullTitle: string;
   targetDays: number;
   emoji: string;
   subtitle: string;
   description: string;
   accentColor: string;
-  gradientBg: string;
   borderClass: string;
   badgeBg: string;
   glowColor: string;
 }
 
-const TROPHY_TIERS: TrophyTier[] = [
+export const TROPHY_TIERS: TrophyTier[] = [
   {
     id: 'bronze',
     name: 'Bronze',
+    rankTitle: "L'Éclaireur",
+    fullTitle: "Bronze — L'Éclaireur",
     targetDays: 5,
     emoji: '🥉',
-    subtitle: 'Premier jalon',
+    subtitle: "L'Éclaireur",
     description: '5 jours de consommation notés dans le mois.',
-    accentColor: '#D97706',
-    gradientBg: 'from-amber-500/15 via-orange-500/10 to-transparent',
-    borderClass: 'border-amber-500/30 dark:border-amber-500/40',
-    badgeBg: 'bg-gradient-to-br from-[#CD7F32] via-[#B87333] to-[#8C5220]',
+    accentColor: '#CD7F32',
+    borderClass: 'border-amber-600/35 dark:border-amber-500/40',
+    badgeBg: 'bg-gradient-to-br from-[#E39A5C] via-[#CD7F32] to-[#8C5220]',
     glowColor: 'rgba(205, 127, 50, 0.25)',
   },
   {
     id: 'silver',
     name: 'Argent',
+    rankTitle: 'Le Baroudeur',
+    fullTitle: 'Argent — Le Baroudeur',
     targetDays: 12,
     emoji: '🥈',
-    subtitle: 'Régularité confirmée',
+    subtitle: 'Le Baroudeur',
     description: '12 jours de consommation notés dans le mois.',
     accentColor: '#94A3B8',
-    gradientBg: 'from-slate-300/20 via-slate-400/10 to-transparent',
-    borderClass: 'border-slate-300/40 dark:border-slate-600/50',
-    badgeBg: 'bg-gradient-to-br from-[#E2E8F0] via-[#CBD5E1] to-[#94A3B8]',
+    borderClass: 'border-slate-300/50 dark:border-slate-500/50',
+    badgeBg: 'bg-gradient-to-br from-[#F1F5F9] via-[#CBD5E1] to-[#94A3B8]',
     glowColor: 'rgba(203, 213, 225, 0.3)',
   },
   {
     id: 'gold',
     name: 'Or',
-    targetDays: 18,
+    rankTitle: 'Le Conquérant',
+    fullTitle: 'Or — Le Conquérant',
+    targetDays: 20,
     emoji: '🥇',
-    subtitle: 'Maître du suivi',
-    description: '18 jours de consommation notés dans le mois.',
-    accentColor: '#EAB308',
-    gradientBg: 'from-yellow-400/20 via-amber-400/10 to-transparent',
-    borderClass: 'border-yellow-400/40 dark:border-yellow-400/50',
-    badgeBg: 'bg-gradient-to-br from-[#FDE047] via-[#EAB308] to-[#CA8A04]',
-    glowColor: 'rgba(234, 179, 8, 0.35)',
+    subtitle: 'Le Conquérant',
+    description: '20 jours de consommation notés dans le mois.',
+    accentColor: '#FFD60A',
+    borderClass: 'border-yellow-400/45 dark:border-yellow-400/50',
+    badgeBg: 'bg-gradient-to-br from-[#FFE55C] via-[#FFD60A] to-[#CA8A04]',
+    glowColor: 'rgba(255, 214, 10, 0.35)',
   },
   {
     id: 'diamond',
     name: 'Diamant',
-    targetDays: 25,
+    rankTitle: "L'Indomptable",
+    fullTitle: "Diamant — L'Indomptable",
+    targetDays: 28,
     emoji: '💎',
-    subtitle: 'Légende ultime',
-    description: '25 jours de consommation notés dans le mois.',
-    accentColor: '#06B6D4',
-    gradientBg: 'from-cyan-400/20 via-blue-500/10 to-transparent',
-    borderClass: 'border-cyan-400/40 dark:border-cyan-400/50',
-    badgeBg: 'bg-gradient-to-br from-[#67E8F9] via-[#06B6D4] to-[#0284C7]',
-    glowColor: 'rgba(6, 182, 212, 0.35)',
+    subtitle: "L'Indomptable",
+    description: '28 jours de consommation notés dans le mois.',
+    accentColor: '#38BDF8',
+    borderClass: 'border-cyan-400/45 dark:border-cyan-400/50',
+    badgeBg: 'bg-gradient-to-br from-[#BAE6FD] via-[#38BDF8] to-[#0284C7]',
+    glowColor: 'rgba(56, 189, 248, 0.35)',
   },
 ];
 
+export function getHighestUnlockedTier(monthCount: number): TrophyTier | null {
+  const unlocked = TROPHY_TIERS.filter((t) => monthCount >= t.targetDays);
+  return unlocked.length > 0 ? unlocked[unlocked.length - 1] : null;
+}
+
 const MONTHS_FR = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  'Janvier',
+  'Février',
+  'Mars',
+  'Avril',
+  'Mai',
+  'Juin',
+  'Juillet',
+  'Août',
+  'Septembre',
+  'Octobre',
+  'Novembre',
+  'Décembre',
 ];
 
 interface TrophiesViewProps {
@@ -132,8 +152,7 @@ export function TrophiesView({
 
   // Trophée le plus élevé atteint ce mois
   const highestUnlockedTier = useMemo(() => {
-    const unlocked = TROPHY_TIERS.filter((t) => monthCount >= t.targetDays);
-    return unlocked.length > 0 ? unlocked[unlocked.length - 1] : null;
+    return getHighestUnlockedTier(monthCount);
   }, [monthCount]);
 
   // Prochain trophée à atteindre
@@ -161,7 +180,13 @@ export function TrophiesView({
 
   // Icône du composant selon le palier
   const renderTierIcon = (id: TrophyTier['id'], isUnlocked: boolean) => {
-    const iconClass = `w-6 h-6 ${isUnlocked ? 'text-white' : 'text-neutral-400 dark:text-neutral-500'}`;
+    const iconClass = `w-6 h-6 ${
+      isUnlocked
+        ? id === 'gold' || id === 'silver'
+          ? 'text-[#111111]'
+          : 'text-white'
+        : 'text-neutral-400 dark:text-neutral-500'
+    }`;
     switch (id) {
       case 'bronze':
         return <Medal className={iconClass} />;
@@ -175,28 +200,28 @@ export function TrophiesView({
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center overflow-y-auto px-[18px] pt-2 pb-6 touch-pan-y">
-      {/* Sélecteur de mois & Titre gamifié */}
-      <div className="w-full max-w-[420px] mb-3">
-        <div className="flex items-center justify-between px-2 py-1 bg-[var(--card-bg)] rounded-[20px] border border-[var(--border-subtle)] shadow-[var(--shadow-card)]">
+    <div className="w-full h-full flex flex-col items-center justify-start overflow-y-auto px-[18px] pt-2 pb-6 touch-pan-y">
+      {/* Sélecteur de mois horizontal — flux vertical strict (shrink-0 + mb-4 = 16px) pour Safari iOS */}
+      <div className="w-full max-w-[420px] shrink-0 mb-4">
+        <div className="flex items-center justify-between px-2 py-1.5 bg-[var(--card-bg)] rounded-[20px] border border-[var(--border-subtle)] shadow-[var(--shadow-card)]">
           <button
             type="button"
             onClick={handlePrevMonth}
             aria-label="Mois précédent"
-            className="spring-icon-btn w-[34px] h-[34px] rounded-full bg-[var(--card-subtle)] text-[var(--text-main)] flex items-center justify-center cursor-pointer active:scale-90"
+            className="spring-icon-btn w-[34px] h-[34px] shrink-0 rounded-full bg-[var(--card-subtle)] text-[var(--text-main)] flex items-center justify-center cursor-pointer active:scale-90"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex flex-col items-center text-center">
-            <span className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--text-main)]">
+          <div className="flex flex-col items-center justify-center text-center min-w-0 px-2">
+            <span className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--text-main)] leading-tight">
               {MONTHS_FR[selectedDate.getMonth()]} {selectedDate.getFullYear()}
             </span>
             {!isCurrentRealMonth && (
               <button
                 type="button"
                 onClick={handleResetToCurrentMonth}
-                className="text-[10px] font-semibold text-[#FFD60A] underline underline-offset-2 hover:opacity-80"
+                className="text-[10px] font-semibold text-[#FFD60A] underline underline-offset-2 hover:opacity-80 mt-0.5"
               >
                 Revenir à ce mois-ci
               </button>
@@ -207,116 +232,114 @@ export function TrophiesView({
             type="button"
             onClick={handleNextMonth}
             aria-label="Mois suivant"
-            className="spring-icon-btn w-[34px] h-[34px] rounded-full bg-[var(--card-subtle)] text-[var(--text-main)] flex items-center justify-center cursor-pointer active:scale-90"
+            className="spring-icon-btn w-[34px] h-[34px] shrink-0 rounded-full bg-[var(--card-subtle)] text-[var(--text-main)] flex items-center justify-center cursor-pointer active:scale-90"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Carte d'en-tête : Progression globale & Palier actuel */}
-      <div className="w-full max-w-[420px] p-4 mb-3.5 rounded-[24px] bg-[var(--card-bg)] border border-[var(--border-subtle)] shadow-[var(--shadow-card)] relative overflow-hidden">
-        {/* Glow décoratif de fond */}
-        <div 
-          className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-40 transition-colors duration-500"
-          style={{
-            backgroundColor: highestUnlockedTier ? highestUnlockedTier.accentColor : '#FFD60A'
-          }}
-        />
-
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-[var(--card-subtle)] flex items-center justify-center text-[16px] shadow-sm">
-                {highestUnlockedTier ? highestUnlockedTier.emoji : '🎯'}
+      {/* Carte d'en-tête : STATUT DU MOIS (shrink-0, sans positionnement absolu superflu) */}
+      <div className="w-full max-w-[420px] shrink-0 p-4 mb-3.5 rounded-[24px] bg-[var(--card-bg)] border border-[var(--border-subtle)] shadow-[var(--shadow-card)]">
+        <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-9 h-9 shrink-0 rounded-full bg-[var(--card-subtle)] flex items-center justify-center text-[17px] shadow-sm">
+              {highestUnlockedTier ? highestUnlockedTier.emoji : '🎯'}
+            </span>
+            <div className="min-w-0">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Statut du mois
               </span>
-              <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  Statut du mois
-                </span>
-                <span className="text-[14px] font-extrabold text-[var(--text-main)]">
-                  {highestUnlockedTier ? `Palier ${highestUnlockedTier.name}` : 'En route pour le Bronze'}
-                </span>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <span className="text-[20px] font-black text-[var(--text-main)] tabular-nums">
-                {monthCount}
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--text-muted)]">
-                /{daysInCurrentMonth} j
+              <span className="block text-[14px] font-extrabold text-[var(--text-main)] truncate">
+                {highestUnlockedTier
+                  ? highestUnlockedTier.fullTitle
+                  : 'En route pour le Bronze'}
               </span>
             </div>
           </div>
 
-          {/* Message de motivation */}
-          <div className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[var(--card-subtle)] text-[11px] font-semibold text-[var(--text-main)] mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-[#FFD60A] shrink-0" />
-            <span className="truncate">
-              {nextTargetTier ? (
-                <>
-                  Plus que <strong className="text-[#FFD60A] font-bold">{nextTargetTier.targetDays - monthCount} jour{nextTargetTier.targetDays - monthCount > 1 ? 's' : ''}</strong> pour débloquer le {nextTargetTier.name} {nextTargetTier.emoji}
-                </>
-              ) : (
-                <span className="text-cyan-500 dark:text-cyan-400 font-bold">
-                  Félicitations ! Tous les trophées du mois sont débloqués 💎
-                </span>
-              )}
+          <div className="text-right shrink-0">
+            <span className="text-[20px] font-black text-[var(--text-main)] tabular-nums">
+              {monthCount}
+            </span>
+            <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+              /{daysInCurrentMonth} j
             </span>
           </div>
+        </div>
 
-          {/* Timeline de progression jalonnée (0 -> 5 -> 12 -> 18 -> 25) */}
-          <div className="relative pt-2 pb-1">
-            {/* Ligne de fond */}
-            <div className="h-2 w-full bg-[var(--card-subtle)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
-              <div
-                className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-cyan-400 transition-all duration-500 ease-out rounded-full"
-                style={{
-                  width: `${Math.min(100, Math.round((monthCount / 25) * 100))}%`,
-                }}
-              />
-            </div>
+        {/* Message de motivation */}
+        <div className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[var(--card-subtle)] text-[11px] font-semibold text-[var(--text-main)] mb-3">
+          <Sparkles className="w-3.5 h-3.5 text-[#FFD60A] shrink-0" />
+          <span className="truncate">
+            {nextTargetTier ? (
+              <>
+                Plus que{' '}
+                <strong className="text-[#FFD60A] font-bold">
+                  {nextTargetTier.targetDays - monthCount} jour
+                  {nextTargetTier.targetDays - monthCount > 1 ? 's' : ''}
+                </strong>{' '}
+                pour {nextTargetTier.fullTitle} {nextTargetTier.emoji}
+              </>
+            ) : (
+              <span className="text-cyan-500 dark:text-cyan-400 font-bold">
+                Félicitations ! Tous les trophées du mois sont débloqués 💎
+              </span>
+            )}
+          </span>
+        </div>
 
-            {/* Balises des 4 trophées */}
-            <div className="flex justify-between items-center mt-2 px-0.5">
-              {TROPHY_TIERS.map((tier) => {
-                const isPassed = monthCount >= tier.targetDays;
-                return (
-                  <div
-                    key={tier.id}
-                    className="flex flex-col items-center gap-0.5"
-                    style={{ minWidth: '40px' }}
+        {/* Timeline de progression jalonnée (0 -> 5 -> 12 -> 20 -> 28) */}
+        <div className="pt-1 pb-0.5">
+          {/* Ligne de fond */}
+          <div className="h-2 w-full bg-[var(--card-subtle)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+            <div
+              className="h-full bg-gradient-to-r from-amber-500 via-[#FFD60A] to-cyan-400 transition-all duration-500 ease-out rounded-full"
+              style={{
+                width: `${Math.min(100, Math.round((monthCount / 28) * 100))}%`,
+              }}
+            />
+          </div>
+
+          {/* Balises des 4 trophées */}
+          <div className="flex justify-between items-center mt-2 px-0.5">
+            {TROPHY_TIERS.map((tier) => {
+              const isPassed = monthCount >= tier.targetDays;
+              return (
+                <div
+                  key={tier.id}
+                  className="flex flex-col items-center gap-0.5"
+                  style={{ minWidth: '40px' }}
+                >
+                  <span
+                    className={`text-[12px] transition-transform duration-300 ${
+                      isPassed ? 'scale-110 drop-shadow-sm' : 'opacity-40 grayscale'
+                    }`}
                   >
-                    <span
-                      className={`text-[12px] transition-transform duration-300 ${
-                        isPassed ? 'scale-110 drop-shadow-sm' : 'opacity-40 grayscale'
-                      }`}
-                    >
-                      {tier.emoji}
-                    </span>
-                    <span
-                      className={`text-[9px] font-bold tabular-nums ${
-                        isPassed
-                          ? 'text-[var(--text-main)]'
-                          : 'text-[var(--text-muted)]'
-                      }`}
-                    >
-                      {tier.targetDays}j
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                    {tier.emoji}
+                  </span>
+                  <span
+                    className={`text-[9px] font-bold tabular-nums ${
+                      isPassed ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'
+                    }`}
+                  >
+                    {tier.targetDays}j
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Liste des 4 trophées */}
-      <div className="w-full max-w-[420px] flex flex-col gap-2.5">
+      {/* Liste des 4 trophées (shrink-0 pour préserver la hauteur sur iOS) */}
+      <div className="w-full max-w-[420px] shrink-0 flex flex-col gap-2.5">
         {TROPHY_TIERS.map((tier) => {
           const isUnlocked = monthCount >= tier.targetDays;
-          const progressPercent = Math.min(100, Math.round((monthCount / tier.targetDays) * 100));
+          const progressPercent = Math.min(
+            100,
+            Math.round((monthCount / tier.targetDays) * 100)
+          );
           const remainingDays = Math.max(0, tier.targetDays - monthCount);
 
           return (
@@ -330,20 +353,13 @@ export function TrophiesView({
                   ? `0 6px 20px -4px ${tier.glowColor}`
                   : 'var(--shadow-card)',
               }}
-              className={`relative overflow-hidden rounded-[22px] p-3.5 transition-all duration-300 border ${
+              className={`rounded-[22px] p-3.5 transition-all duration-300 border ${
                 tier.borderClass
               } ${
-                isUnlocked
-                  ? 'bg-[var(--card-bg)]'
-                  : 'bg-[var(--card-bg)] opacity-85'
+                isUnlocked ? 'bg-[var(--card-bg)]' : 'bg-[var(--card-bg)] opacity-85'
               }`}
             >
-              {/* Fond dégradé subtil selon le métal */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-r ${tier.gradientBg} pointer-events-none opacity-40`}
-              />
-
-              <div className="relative z-10 flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 {/* Badge 3D / Médaille */}
                 <div
                   className={`relative shrink-0 w-12 h-12 rounded-[16px] flex items-center justify-center shadow-md transition-transform duration-300 ${
@@ -373,11 +389,11 @@ export function TrophiesView({
                 {/* Détails du trophée */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1 mb-0.5">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <h2 className="text-[14px] font-extrabold text-[var(--text-main)] truncate">
-                        {tier.name}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h2 className="text-[13.5px] font-extrabold text-[var(--text-main)] truncate">
+                        {tier.fullTitle}
                       </h2>
-                      <span className="text-[12px]">{tier.emoji}</span>
+                      <span className="text-[12px] shrink-0">{tier.emoji}</span>
                     </div>
 
                     <span
@@ -387,7 +403,7 @@ export function TrophiesView({
                           : 'bg-neutral-100 dark:bg-neutral-800 text-[var(--text-muted)]'
                       }`}
                     >
-                      {isUnlocked ? 'Débloqué' : `Verrouillé`}
+                      {isUnlocked ? 'Débloqué' : 'Verrouillé'}
                     </span>
                   </div>
 
@@ -400,9 +416,7 @@ export function TrophiesView({
                     <div className="flex-1 h-1.5 bg-[var(--card-subtle)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          isUnlocked
-                            ? 'bg-emerald-500'
-                            : 'bg-[#FFD60A]'
+                          isUnlocked ? 'bg-emerald-500' : 'bg-[#FFD60A]'
                         }`}
                         style={{ width: `${progressPercent}%` }}
                       />
@@ -415,7 +429,8 @@ export function TrophiesView({
                         </span>
                       ) : (
                         <span className="text-[var(--text-muted)]">
-                          {monthCount}/{tier.targetDays} j ({remainingDays} restant{remainingDays > 1 ? 's' : ''})
+                          {monthCount}/{tier.targetDays} j ({remainingDays} restant
+                          {remainingDays > 1 ? 's' : ''})
                         </span>
                       )}
                     </span>
@@ -428,7 +443,7 @@ export function TrophiesView({
       </div>
 
       {/* Invitation au Swipe vers le haut : Vue Potes / Cercle */}
-      <div className="w-full max-w-[420px] mt-3.5 flex flex-col items-center gap-2">
+      <div className="w-full max-w-[420px] shrink-0 mt-3.5 flex flex-col items-center gap-2">
         <button
           type="button"
           onClick={() => {
@@ -437,15 +452,15 @@ export function TrophiesView({
           }}
           className="w-full py-2.5 px-4 rounded-[18px] bg-[var(--card-bg)] border border-[var(--border-subtle)] shadow-[var(--shadow-card)] flex items-center justify-between gap-2 cursor-pointer active:scale-[0.98] transition-transform"
         >
-          <div className="flex items-center gap-2.5">
-            <span className="w-7 h-7 rounded-full bg-[#FFD60A]/20 text-[var(--text-main)] flex items-center justify-center">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-7 h-7 shrink-0 rounded-full bg-[#FFD60A]/20 text-[var(--text-main)] flex items-center justify-center">
               <Users className="w-3.5 h-3.5 stroke-[2.4]" />
             </span>
-            <div className="text-left">
-              <span className="block text-[12px] font-extrabold text-[var(--text-main)]">
+            <div className="text-left min-w-0">
+              <span className="block text-[12px] font-extrabold text-[var(--text-main)] truncate">
                 Vue Potes / Cercle {groupId ? `(#${groupId})` : ''}
               </span>
-              <span className="block text-[10px] font-semibold text-[var(--text-muted)]">
+              <span className="block text-[10px] font-semibold text-[var(--text-muted)] truncate">
                 Glissez vers le haut pour voir la progression des amis
               </span>
             </div>

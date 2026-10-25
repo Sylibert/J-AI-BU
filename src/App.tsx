@@ -12,12 +12,55 @@ import { useHydrationReminder } from './hooks/useHydrationReminder';
 import { NotificationReminderModal } from './components/NotificationReminderModal';
 import { useTheme } from './hooks/useTheme';
 import { ThemeToggle } from './components/ThemeToggle';
-import { TrophiesView } from './components/TrophiesView';
+import { TrophiesView, TROPHY_TIERS, TrophyTier } from './components/TrophiesView';
 import { FriendsCircleView } from './components/FriendsCircleView';
 import { useSupabaseGroup } from './hooks/useSupabaseGroup';
 import { SupabaseProfileModal } from './components/SupabaseProfileModal';
+import { LevelUpModal } from './components/LevelUpModal';
 
 const STORAGE_KEY = 'gbu_validated_dates';
+const CELEBRATED_TIERS_KEY = 'gbu_celebrated_tiers';
+
+declare global {
+  interface Window {
+    confetti?: (options?: Record<string, unknown>) => void;
+  }
+}
+
+function hasCelebratedTier(monthPrefix: string, tierId: string): boolean {
+  try {
+    const raw = localStorage.getItem(CELEBRATED_TIERS_KEY);
+    if (!raw) return false;
+    const list = JSON.parse(raw);
+    return Array.isArray(list) && list.includes(`${monthPrefix}${tierId}`);
+  } catch {
+    return false;
+  }
+}
+
+function markTierCelebrated(monthPrefix: string, tierId: string): void {
+  try {
+    const raw = localStorage.getItem(CELEBRATED_TIERS_KEY);
+    const list: string[] = raw ? JSON.parse(raw) : [];
+    const key = `${monthPrefix}${tierId}`;
+    if (Array.isArray(list) && !list.includes(key)) {
+      localStorage.setItem(CELEBRATED_TIERS_KEY, JSON.stringify([...list, key]));
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function launchGoldenConfetti(): void {
+  if (typeof window !== 'undefined' && typeof window.confetti === 'function') {
+    window.confetti({
+      particleCount: 85,
+      spread: 75,
+      origin: { y: 0.58 },
+      colors: ['#FFD60A', '#FFF380', '#F59E0B', '#FFFFFF'],
+    });
+  }
+}
 
 const MONTHS_FR = [
   'Janvier',
@@ -83,6 +126,7 @@ const USE_CUSTOM_BUTTON_IMAGES = false;
 
 export default function App() {
   const [validatedDates, setValidatedDates] = useState<string[]>(() => loadValidatedDates());
+  const [celebratedTierModal, setCelebratedTierModal] = useState<TrophyTier | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const isCircleRoute =
@@ -235,11 +279,35 @@ export default function App() {
     // Si un swipe est en cours, ignorer le clic
     if (Math.abs(dragOffsetPx) > 10) return;
 
-    triggerHaptic([12, 30, 18]);
+    const currentTodayKey = getTodayKey();
+    const wasAlreadyValidated = validatedDates.includes(currentTodayKey);
+
     setAnimTrigger((prev) => prev + 1);
     setIsPopAnimating(true);
     window.setTimeout(() => setIsPopAnimating(false), 540);
-    toggleDateValidation(getTodayKey());
+
+    // Si l'action valide aujourd'hui, vérifier si un palier mensuel (5, 12, 20, 28) est franchi
+    if (!wasAlreadyValidated) {
+      const monthPrefix = currentTodayKey.slice(0, 8); // "YYYY-MM-"
+      const nextMonthCount =
+        validatedDates.filter((d) => d.startsWith(monthPrefix)).length + 1;
+      const crossedTier = TROPHY_TIERS.find(
+        (t) => t.targetDays === nextMonthCount && !hasCelebratedTier(monthPrefix, t.id)
+      );
+
+      if (crossedTier) {
+        markTierCelebrated(monthPrefix, crossedTier.id);
+        triggerHaptic([20, 50, 40]);
+        launchGoldenConfetti();
+        setCelebratedTierModal(crossedTier);
+      } else {
+        triggerHaptic([12, 30, 18]);
+      }
+    } else {
+      triggerHaptic([12, 30, 18]);
+    }
+
+    toggleDateValidation(currentTodayKey);
   };
 
   const handlePrevMonth = () => {
@@ -785,6 +853,10 @@ export default function App() {
         </span>
       </footer>
 
+      <LevelUpModal
+        tier={celebratedTierModal}
+        onClose={() => setCelebratedTierModal(null)}
+      />
       <OfflineIndicator />
     </div>
   );
